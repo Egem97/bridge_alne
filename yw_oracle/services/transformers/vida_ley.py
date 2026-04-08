@@ -1,7 +1,10 @@
 from .obreros import ObrerosTransformer
-from ..mappings.activities import ACTIVITY_NORMALIZATIONS_VIDA_LEY
+from ..mappings.sheets_loader import get_activity_normalizations_obreros
 
 
 class VidaLeyTransformer(ObrerosTransformer):
-    """Vida Ley is nearly identical to Obreros. Only activity normalizations differ if needed."""
-    ACTIVITY_NORMALIZATIONS = ACTIVITY_NORMALIZATIONS_VIDA_LEY
+    """Vida Ley shares the same activity normalizations as Obreros."""
+
+    @property
+    def ACTIVITY_NORMALIZATIONS(self):
+        return get_activity_normalizations_obreros()

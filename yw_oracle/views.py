@@ -1,5 +1,6 @@
 import io
 import json
+from datetime import datetime
 
 import openpyxl
 from django.shortcuts import render
@@ -11,6 +12,7 @@ from .utils import NetSuiteClient
 from .models import UploadHistory
 from .services.pipeline import process_upload
 from .services.payload import reorder_payload
+from .services.master_data import MasterDataLoader
 from dashboard.decorators import role_required
 
 # Which planilla types each role can access
@@ -279,3 +281,271 @@ async def netsuite_query_view(request):
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+def _build_enrichment_maps():
+    """
+    Build reverse lookup dicts from local Excel/Parquet files so the detail view
+    can resolve NetSuite internal IDs to human-readable names without extra API calls.
+    All failures are swallowed so a missing file never breaks the response.
+    """
+    maps = {
+        'subsidiary': {},   # id (int) → name (str)
+        'ceco':       {},   # id (int) → name (str)
+        'account':    {},   # id (int) → {'code': str, 'name': str}
+        'actividad':  {},   # id (int) → name (str)
+    }
+
+    try:
+        sub_dict = MasterDataLoader.get_subsidiary_dict()   # {name: id}
+        maps['subsidiary'] = {int(v): k for k, v in sub_dict.items()}
+    except Exception:
+        pass
+
+    try:
+        ceco_map = MasterDataLoader.get_ceco_map()           # {sub_id: {name: ceco_id}}
+        for cecos in ceco_map.values():
+            for name, ceco_id in cecos.items():
+                try:
+                    maps['ceco'][int(ceco_id)] = name
+                except (ValueError, TypeError):
+                    pass
+    except Exception:
+        pass
+
+    try:
+        accounts_df = MasterDataLoader.get_accounts_excel()
+        for _, row in accounts_df.iterrows():
+            try:
+                maps['account'][int(row['id_cuenta'])] = {
+                    'code': str(row.get('CUENTA CONTABLE', '') or ''),#NAME CUENTA
+                    'name': str(row.get('DESCRIPCION', '') or ''),
+                }
+            except (ValueError, TypeError):
+                pass
+    except Exception:
+        pass
+
+    try:
+        act_df = MasterDataLoader.get_actividad_table()
+        if 'id_actividad' in act_df.columns:
+            for _, row in act_df.iterrows():
+                try:
+                    maps['actividad'][int(row['id_actividad'])] = str(row.get('Actividad del Proyecto', '') or '')
+                except (ValueError, TypeError):
+                    pass
+    except Exception:
+        pass
+
+    return maps
+
+
+@login_required
+async def transactions_view(request):
+
+    def get_subsidiaries():
+        sub_dict = MasterDataLoader.get_subsidiary_dict()
+        return sorted(
+            [{"name": name, "id": sid} for name, sid in sub_dict.items()],
+            key=lambda x: x["name"]
+        )
+
+    if request.method == 'GET':
+        subsidiaries = await sync_to_async(get_subsidiaries)()
+        return await sync_to_async(render)(
+            request,
+            'yw_oracle/transactions.html',
+            {'subsidiaries': subsidiaries}
+        )
+
+    if request.method == 'POST' and request.content_type == 'application/json':
+        try:
+            body = json.loads(request.body)
+            action = body.get('action')
+
+            if action == 'list':
+                date_from = body.get('date_from', '')
+                
+                date_to = body.get('date_to', '')
+                
+                subsidiary_id = body.get('subsidiary_id')
+                
+                try:
+                    datetime.strptime(date_from, '%Y-%m-%d')
+                    datetime.strptime(date_to, '%Y-%m-%d')
+                except (ValueError, TypeError):
+                    return JsonResponse({'error': 'Fechas inválidas. Use el formato YYYY-MM-DD.'}, status=400)
+
+                try:
+                    subsidiary_id = int(subsidiary_id)
+                except (ValueError, TypeError):
+                    return JsonResponse({'error': 'Subsidiaria inválida.'}, status=400)
+
+                query = (
+                    "SELECT "
+                    "t.id AS transaction_id, "
+                    "t.tranid AS numero_asiento, "
+                    "t.trandate AS fecha, "
+                    "t.postingperiod AS periodo, "
+                    "t.memo AS descripcion, "
+                    "t.createddate AS fecha_creacion, "
+                    "t.lastmodifieddate AS ultima_modificacion "
+                    "FROM transaction t "
+                    "WHERE t.type = 'Journal' "
+                    "AND t.voided = 'F' "
+                    f"AND TRUNC(t.createddate) >= TO_DATE('{date_from}', 'YYYY-MM-DD') "
+                    f"AND TRUNC(t.createddate) <= TO_DATE('{date_to}', 'YYYY-MM-DD') "
+                    f"AND t.subsidiary = {subsidiary_id} "
+                    "ORDER BY t.createddate DESC, t.id"
+                )
+
+                def run_list():
+                    client = NetSuiteClient()
+                    return client.execute_suiteql(query)
+
+                result = await sync_to_async(run_list)()
+                return JsonResponse(result, safe=False)
+
+            elif action == 'detail':
+                try:
+                    transaction_id = int(body.get('transaction_id', 0))
+                except (ValueError, TypeError):
+                    return JsonResponse({'error': 'ID de transacción inválido.'}, status=400)
+
+                if transaction_id <= 0:
+                    return JsonResponse({'error': 'ID de transacción inválido.'}, status=400)
+
+                query = (
+                    "SELECT "
+                    "t.id AS transaction_id, "
+                    "t.tranid AS numero_asiento, "
+                    "t.trandate AS fecha, "
+                    "t.postingperiod AS periodo, "
+                    "t.memo AS descripcion, "
+                    "t.createddate AS fecha_creacion, "
+                    "t.lastmodifieddate AS ultima_modificacion, "
+                    "tl.id AS linea_id, "
+                    "tl.linesequencenumber AS numero_linea, "
+                    "tl.account AS id_cuenta, "
+                    "CASE WHEN tl.amount > 0 THEN tl.amount ELSE 0 END AS debito, "
+                    "CASE WHEN tl.amount < 0 THEN ABS(tl.amount) ELSE 0 END AS credito, "
+                    "t.subsidiary AS id_subsidiary, "
+                    "tl.department AS id_department, "
+                    "tl.cseg_actividad AS id_actividad "
+                    "FROM transaction t "
+                    "INNER JOIN transactionline tl ON t.id = tl.transaction "
+                    "WHERE t.type = 'Journal' "
+                    "AND t.voided = 'F' "
+                    "AND tl.account IS NOT NULL "
+                    f"AND t.id = {transaction_id} "
+                    "ORDER BY tl.linesequencenumber"
+                )
+
+                def run_detail():
+                    def _int(val):
+                        try:
+                            return int(val)
+                        except (TypeError, ValueError):
+                            return None
+
+                    client = NetSuiteClient()
+                    ns_data = client.execute_suiteql(query)
+                    items = ns_data.get('items', [])
+
+                    enrich = _build_enrichment_maps()
+
+                    # Collect account IDs not resolved by local files
+                    missing_ids = {
+                        _int(item.get('id_cuenta'))
+                        for item in items
+                        if _int(item.get('id_cuenta')) is not None
+                        and _int(item.get('id_cuenta')) not in enrich['account']
+                    }
+
+                    # Fetch missing accounts from NetSuite in one batch query
+                    if missing_ids:
+                        ids_str = ', '.join(str(i) for i in missing_ids)
+                        acc_query = (
+                            "SELECT id, accountnumber, name "
+                            "FROM account "
+                            f"WHERE id IN ({ids_str})"
+                        )
+                        try:
+                            acc_data = client.execute_suiteql(acc_query)
+                            for acc in acc_data.get('items', []):
+                                acc_id = _int(acc.get('id'))
+                                if acc_id is not None:
+                                    enrich['account'][acc_id] = {
+                                        'code': str(acc.get('accountnumber') or ''),
+                                        'name': str(acc.get('name') or ''),
+                                    }
+                        except Exception:
+                            pass  # Missing names are non-fatal
+
+                    total_debit = 0.0
+                    total_credit = 0.0
+                    per_account = {}   # id_cuenta → {code, name, debit, credit}
+                    enriched = []
+
+                    for item in items:
+                        debit  = float(item.get('debito')  or 0)
+                        credit = float(item.get('credito') or 0)
+                        total_debit  += debit
+                        total_credit += credit
+
+                        id_cuenta     = _int(item.get('id_cuenta'))
+                        id_subsidiary = _int(item.get('id_subsidiary'))
+                        id_department = _int(item.get('id_department'))
+                        id_actividad  = _int(item.get('id_actividad'))
+
+                        acc_info   = enrich['account'].get(id_cuenta, {}) if id_cuenta is not None else {}
+                        sub_name   = enrich['subsidiary'].get(id_subsidiary, str(id_subsidiary or ''))
+                        dept_name  = enrich['ceco'].get(id_department, str(id_department or ''))
+                        act_name   = enrich['actividad'].get(id_actividad, str(id_actividad or ''))
+
+                        # Per-account totals
+                        acc_key = id_cuenta or 0
+                        if acc_key not in per_account:
+                            per_account[acc_key] = {
+                                'id': acc_key,
+                                'code': acc_info.get('code', str(id_cuenta or '')),
+                                'name': acc_info.get('name', ''),
+                                'debit': 0.0,
+                                'credit': 0.0,
+                            }
+                        per_account[acc_key]['debit']  += debit
+                        per_account[acc_key]['credit'] += credit
+
+                        enriched.append({
+                            **item,
+                            'debito':              round(debit, 2),
+                            'credito':             round(credit, 2),
+                            'cuenta_codigo':       acc_info.get('code', str(id_cuenta or '')),
+                            'cuenta_nombre':       acc_info.get('name', ''),
+                            'subsidiaria_nombre':  sub_name,
+                            'departamento_nombre': dept_name,
+                            'actividad_nombre':    act_name,
+                        })
+
+                    for v in per_account.values():
+                        v['debit']  = round(v['debit'],  2)
+                        v['credit'] = round(v['credit'], 2)
+
+                    metrics = {
+                        'total_debit':  round(total_debit,  2),
+                        'total_credit': round(total_credit, 2),
+                        'per_account':  sorted(per_account.values(), key=lambda x: x['code']),
+                    }
+
+                    return {'items': enriched, 'metrics': metrics, 'count': len(enriched)}
+
+                result = await sync_to_async(run_detail)()
+                return JsonResponse(result, safe=False)
+
+            else:
+                return JsonResponse({'error': 'Acción no válida.'}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Método no permitido.'}, status=405)

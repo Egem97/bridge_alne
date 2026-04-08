@@ -118,38 +118,51 @@ class ExcelValidator:
     def validate_mappings(self, df):
         errors = []
 
-        mapping_checks = [
+        # id_cuenta e id_location son OBLIGATORIOS en todas las filas
+        required_mapping_checks = [
             ("id_cuenta", "Cuenta Contable"),
             ("id_location", "Ubicación"),
         ]
 
-        for col, label in mapping_checks:
+        for col, label in required_mapping_checks:
             if col in df.columns:
                 null_rows = df[df[col].isna()]
                 if not null_rows.empty:
                     row_indices = null_rows.index.tolist()[:15]
                     errors.append(ValidationError(
-                        level='warning',
+                        level='error',
                         category='mapping',
-                        message=f'{label} no mapeada en {len(null_rows)} fila(s)',
+                        message=f'{label} no mapeada en {len(null_rows)} fila(s) — campo obligatorio',
                         details={'column': col, 'rows': row_indices, 'count': len(null_rows)}
                     ))
 
-        optional_mapping_checks = [
+        # Cuentas que empiezan con "1" o "4" pueden tener estos campos vacíos
+        # Cuentas que NO empiezan con "1" o "4" DEBEN tener estos campos llenos (error bloqueante)
+        required_segments_checks = [
             ("id_ceco", "Centro de Costo"),
             ("id_area", "Área/Clase"),
             ("id_actividad", "Actividad del Proyecto"),
+            ("id_partida", "Partida Presupuestaria"),
+            ("id_macro_partida", "Macro Partida"),
         ]
 
-        for col, label in optional_mapping_checks:
-            if col in df.columns:
-                null_rows = df[df[col].isna()]
+        if "NUMERO y NOMBRE DE CUENTA CONTABLE" in df.columns:
+            cuenta_str = df["NUMERO y NOMBRE DE CUENTA CONTABLE"].astype(str)
+            # mask_requires_segments: True si la cuenta NO empieza con "1" o "4"
+            mask_requires_segments = ~cuenta_str.str[:1].isin(["1", "4"])
+            df_check = df[mask_requires_segments]
+        else:
+            df_check = df
+
+        for col, label in required_segments_checks:
+            if col in df_check.columns:
+                null_rows = df_check[df_check[col].isna()]
                 if not null_rows.empty:
                     row_indices = null_rows.index.tolist()[:15]
                     errors.append(ValidationError(
-                        level='warning',
+                        level='error',
                         category='mapping',
-                        message=f'{label} no mapeada en {len(null_rows)} fila(s)',
+                        message=f'{label} obligatorio en {len(null_rows)} fila(s) (cuenta no empieza con 1 o 4)',
                         details={'column': col, 'rows': row_indices, 'count': len(null_rows)}
                     ))
 

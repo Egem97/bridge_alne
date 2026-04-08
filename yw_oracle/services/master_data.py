@@ -126,10 +126,13 @@ class MasterDataLoader:
         accounts = pd.read_excel(ACCOUNTS_EXCEL, dtype={"externalid": str})
         accounts = accounts.rename(columns={
             "externalid": "CUENTA CONTABLE",
-            "id": "id_cuenta"
+            "id": "id_cuenta",
+            "custrecord_gd_auxiliar":"DESCRIPCION"
         })
         accounts["CUENTA CONTABLE"] = accounts["CUENTA CONTABLE"].astype(str)
-        return accounts[["CUENTA CONTABLE", "id_cuenta", "custrecord_gd_auxiliar", "isinactive"]]
+        accounts["DESCRIPCION"] = accounts["DESCRIPCION"].astype(str)
+        accounts["DESCRIPCION"] = accounts["DESCRIPCION"].str[11:]
+        return accounts[["CUENTA CONTABLE", "id_cuenta", "DESCRIPCION", "isinactive"]]
 
     @classmethod
     def clear_cache(cls):

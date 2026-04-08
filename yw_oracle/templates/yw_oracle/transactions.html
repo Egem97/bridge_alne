@@ -1,0 +1,645 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Consulta de Transacciones - NetSuite{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="{% static 'yw_oracle/css/datatables-custom.css' %}">
+
+<style>
+  /* ── Layout ─────────────────────────────────────────── */
+  .tx-wrapper {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .tx-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+
+  /* ── Header ─────────────────────────────────────────── */
+  .tx-header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    background: linear-gradient(135deg,#f8fafc 0%,#fff 100%);
+  }
+  .tx-header-icon {
+    width: 44px; height: 44px; flex-shrink: 0;
+    background: linear-gradient(135deg,#3b82f6,#1d4ed8);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.1rem;
+  }
+  .tx-header h1 { font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0; }
+  .tx-header p  { font-size: 0.8rem; color: #64748b; margin: 0; }
+
+  /* ── Filters ─────────────────────────────────────────── */
+  .tx-filters {
+    display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;
+    padding: 1.25rem 1.5rem;
+    background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+  }
+  .filter-group { display: flex; flex-direction: column; gap: .3rem; min-width: 160px; }
+  .filter-group label {
+    font-size: .78rem; font-weight: 600; color: #475569;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  .filter-group input,
+  .filter-group select {
+    height: 38px; border: 1px solid #cbd5e1; border-radius: 7px;
+    padding: 0 .75rem; font-size: .875rem; color: #1e293b;
+    background: #fff; outline: none; transition: border-color .15s;
+  }
+  .filter-group input:focus,
+  .filter-group select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+  .filter-group.wide { min-width: 220px; }
+
+  .btn-search {
+    height: 38px; padding: 0 1.25rem;
+    background: linear-gradient(135deg,#3b82f6,#1d4ed8);
+    color: #fff; border: none; border-radius: 7px;
+    font-size: .875rem; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: .5rem;
+    transition: opacity .15s; white-space: nowrap;
+  }
+  .btn-search:hover { opacity: .88; }
+  .btn-search:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* ── Body ────────────────────────────────────────────── */
+  .tx-body { padding: 1.25rem 1.5rem; }
+
+  .tx-placeholder {
+    text-align: center; padding: 3rem 1rem; color: #94a3b8;
+  }
+  .tx-placeholder i { font-size: 2.5rem; margin-bottom: .75rem; display: block; }
+  .tx-placeholder p { font-size: .9rem; margin: 0; }
+
+  .tx-error-msg {
+    background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+    border-radius: 8px; padding: .75rem 1rem; font-size: .875rem;
+    display: none; margin-bottom: 1rem;
+  }
+  .tx-count-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    background: #eff6ff; color: #1d4ed8;
+    border-radius: 20px; padding: .2rem .75rem;
+    font-size: .8rem; font-weight: 600; margin-bottom: .75rem;
+  }
+  .btn-detail {
+    padding: .25rem .65rem; font-size: .78rem;
+    background: #eff6ff; color: #1d4ed8;
+    border: 1px solid #bfdbfe; border-radius: 5px;
+    cursor: pointer; white-space: nowrap; transition: background .15s;
+  }
+  .btn-detail:hover { background: #dbeafe; }
+
+  /* ── Modal ───────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 1rem;
+  }
+  .modal-box {
+    background: #fff; border-radius: 14px;
+    width: 100%; max-width: 1100px; max-height: 92vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.22);
+  }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.4rem; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+  }
+  .modal-head h3 { font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0; }
+  .modal-close {
+    width: 30px; height: 30px;
+    background: #f1f5f9; border: none; border-radius: 6px;
+    cursor: pointer; color: #64748b; font-size: .9rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .modal-close:hover { background: #e2e8f0; }
+  .modal-body-scroll { overflow-y: auto; padding: 1.25rem 1.4rem; flex: 1; }
+
+  /* ── Meta grid ───────────────────────────────────────── */
+  .tx-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px,1fr));
+    gap: .65rem; margin-bottom: 1.25rem;
+  }
+  .tx-meta-item { background: #f8fafc; border-radius: 8px; padding: .6rem .85rem; }
+  .tx-meta-label {
+    font-size: .68rem; font-weight: 600; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .04em; margin-bottom: .15rem;
+  }
+  .tx-meta-value { font-size: .875rem; font-weight: 600; color: #1e293b; word-break: break-word; }
+
+  /* ── Metrics bar ─────────────────────────────────────── */
+  .metrics-bar {
+    display: flex; flex-wrap: wrap; gap: .75rem;
+    margin-bottom: 1.1rem;
+  }
+  .metric-card {
+    flex: 1; min-width: 150px;
+    border-radius: 9px; padding: .75rem 1rem;
+    display: flex; flex-direction: column; gap: .2rem;
+  }
+  .metric-card.debit  { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .metric-card.credit { background: #fff7ed; border: 1px solid #fed7aa; }
+  .metric-card.diff   { background: #f0f9ff; border: 1px solid #bae6fd; }
+  .metric-label {
+    font-size: .72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  .metric-card.debit  .metric-label  { color: #15803d; }
+  .metric-card.credit .metric-label  { color: #c2410c; }
+  .metric-card.diff   .metric-label  { color: #0369a1; }
+  .metric-value { font-size: 1.15rem; font-weight: 700; }
+  .metric-card.debit  .metric-value  { color: #166534; }
+  .metric-card.credit .metric-value  { color: #9a3412; }
+  .metric-card.diff   .metric-value  { color: #075985; }
+
+  /* ── Section title ───────────────────────────────────── */
+  .section-title {
+    font-size: .78rem; font-weight: 600; color: #64748b;
+    text-transform: uppercase; letter-spacing: .04em;
+    margin: 0 0 .5rem;
+  }
+
+  /* ── Per-account table ───────────────────────────────── */
+  .per-account-wrap { margin-bottom: 1.5rem; overflow-x: auto; }
+  .per-account-table {
+    width: 100%; border-collapse: collapse; font-size: .82rem;
+  }
+  .per-account-table th {
+    background: #f1f5f9; padding: .45rem .75rem;
+    text-align: left; font-weight: 600; color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .per-account-table td {
+    padding: .4rem .75rem; border-bottom: 1px solid #f1f5f9; color: #374151;
+  }
+  .per-account-table tr:last-child td { border-bottom: none; }
+  .per-account-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .per-account-table tfoot td {
+    font-weight: 700; color: #1e293b;
+    border-top: 2px solid #e2e8f0; background: #f8fafc;
+  }
+
+  /* ── Loading / spinners ──────────────────────────────── */
+  .tx-loading {
+    text-align: center; padding: 3rem 1rem; color: #64748b;
+  }
+  .spinner-lg {
+    width: 36px; height: 36px;
+    border: 3px solid #e2e8f0; border-top-color: #3b82f6;
+    border-radius: 50%; animation: spin .7s linear infinite;
+    margin: 0 auto .75rem;
+  }
+  .spinner-sm {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+    border-radius: 50%; animation: spin .7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Amounts ─────────────────────────────────────────── */
+  .amt-debit  { color: #166534; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .amt-credit { color: #9a3412; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .amt-zero   { color: #94a3b8; }
+</style>
+
+<div class="tx-wrapper">
+  <div class="tx-card">
+
+    <!-- Header -->
+    <div class="tx-header">
+      <div class="tx-header-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+      <div>
+        <h1>Consulta de Transacciones</h1>
+        <p>Consulta asientos contables registrados en NetSuite (solo lectura)</p>
+      </div>
+      <div style="margin-left:auto;">
+        <img src="{% static 'yw_oracle/img/netsuite-logo.svg' %}" alt="NetSuite" style="height:32px;">
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <form id="filterForm" onsubmit="return false;">
+      <div class="tx-filters">
+        <div class="filter-group">
+          <label>Desde</label>
+          <input type="date" id="dateFrom" required>
+        </div>
+        <div class="filter-group">
+          <label>Hasta</label>
+          <input type="date" id="dateTo" required>
+        </div>
+        <div class="filter-group wide">
+          <label>Subsidiaria</label>
+          <select id="subsidiaryId" required>
+            <option value="">— Seleccionar —</option>
+            {% for sub in subsidiaries %}
+            <option value="{{ sub.id }}">{{ sub.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-search" id="btnSearch">
+          <i class="fa-solid fa-magnifying-glass"></i> Buscar
+        </button>
+      </div>
+    </form>
+
+    <!-- Body -->
+    <div class="tx-body">
+      <div id="txError" class="tx-error-msg"></div>
+
+      <div id="txPlaceholder" class="tx-placeholder">
+        <i class="fa-solid fa-database"></i>
+        <p>Selecciona un rango de fechas y una subsidiaria para consultar.</p>
+      </div>
+
+      <div id="txLoading" class="tx-loading" style="display:none;">
+        <div class="spinner-lg"></div>
+        <p>Consultando NetSuite...</p>
+      </div>
+
+      <div id="txResults" style="display:none;">
+        <div id="txCountBadge" class="tx-count-badge">
+          <i class="fa-solid fa-list-check"></i>
+          <span id="txCountText">0 transacciones</span>
+        </div>
+        <table id="txTable" class="styled-table compact-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>N° Asiento</th>
+              <th>Fecha</th>
+              <th>Período</th>
+              <th>Descripción</th>
+              <th>Fecha Creación</th>
+              <th>Últ. Modificación</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="txTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ Detail Modal ════════ -->
+<div id="detailModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3><i class="fa-solid fa-file-lines" style="margin-right:.5rem;color:#3b82f6;"></i>Detalle de Transacción</h3>
+      <button class="modal-close" id="closeDetailModal"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body-scroll">
+
+      <!-- Loading state -->
+      <div id="detailLoading" class="tx-loading" style="display:none;">
+        <div class="spinner-lg"></div>
+        <p>Cargando detalle...</p>
+      </div>
+
+      <!-- Loaded content -->
+      <div id="detailContent" style="display:none;">
+
+        <!-- Transaction header meta -->
+        <div id="detailMeta" class="tx-meta-grid"></div>
+
+
+        <!-- ── Per-account totals ── -->
+        <p class="section-title" style="margin-top:.25rem;"><i class="fa-solid fa-table-cells" style="margin-right:.35rem;"></i>Totales por cuenta</p>
+        <div class="per-account-wrap">
+          <table class="per-account-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre cuenta</th>
+                <th class="num">Débito</th>
+                <th class="num">Crédito</th>
+              </tr>
+            </thead>
+            <tbody id="perAccountBody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2">Total</td>
+                <td class="num" id="paFootDebit">—</td>
+                <td class="num" id="paFootCredit">—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- ── Line items download ── -->
+        <p class="section-title"><i class="fa-solid fa-list" style="margin-right:.35rem;"></i>Líneas del asiento</p>
+        <div id="detailDownloadWrap" style="display:none; margin-top:.5rem;">
+          <button id="btnDownloadLines" class="btn-search" style="background:linear-gradient(135deg,#16a34a,#15803d);">
+            <i class="fa-solid fa-file-arrow-down"></i> Descargar líneas en Excel
+          </button>
+          <span id="linesCountLabel" style="margin-left:.75rem; font-size:.82rem; color:#64748b;"></span>
+        </div>
+
+        <div id="detailEmpty" style="display:none;" class="tx-placeholder">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <p>No se encontraron líneas para esta transacción.</p>
+        </div>
+
+      </div><!-- /detailContent -->
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+  let dtMain       = null;
+  let currentLines = [];   // holds line items for Excel export
+  const detailCache = new Map();   // transaction_id → response data
+
+  // ── Default dates (current month) ──────────────────────
+  const today    = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('dateFrom').value = fmtDate(firstDay);
+  document.getElementById('dateTo').value   = fmtDate(today);
+
+  function fmtDate(d) { return d.toISOString().slice(0, 10); }
+  function fmtDisplay(val) { return val ? String(val).slice(0, 10) : '—'; }
+  function fmtAmt(n) {
+    if (n === null || n === undefined) return '—';
+    return Number(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function escHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Search ──────────────────────────────────────────────
+  document.getElementById('filterForm').addEventListener('submit', runSearch);
+
+  async function runSearch() {
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo   = document.getElementById('dateTo').value;
+    const subId    = document.getElementById('subsidiaryId').value;
+    clearError();
+
+    if (!dateFrom || !dateTo || !subId) {
+      showError('Completa todos los filtros antes de buscar.'); return;
+    }
+    if (dateFrom > dateTo) {
+      showError('La fecha "Desde" no puede ser mayor que "Hasta".'); return;
+    }
+
+    detailCache.clear();   // New search → invalidate cached details.
+    setSearching(true);
+    showSection('loading');
+
+    try {
+      const resp = await fetch(window.location.pathname, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ action: 'list', date_from: dateFrom, date_to: dateTo, subsidiary_id: subId }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok || data.error) {
+        showError(data.error || 'Error al consultar NetSuite.');
+        showSection('placeholder'); return;
+      }
+
+      renderMainTable(data.items || []);
+    } catch (e) {
+      showError('Error de conexión: ' + e.message);
+      showSection('placeholder');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  // ── Main table ──────────────────────────────────────────
+  function renderMainTable(items) {
+    // 1. Destroy existing DataTable instance FIRST — before touching the DOM.
+    //    Calling destroy() after adding rows clears the tbody in DataTables 1.x.
+    if (dtMain) { dtMain.destroy(); dtMain = null; }
+
+    // 2. Clear old rows and make container visible so DataTables can measure widths.
+    const tbody = document.getElementById('txTableBody');
+    tbody.innerHTML = '';
+    showSection('results');
+
+    // 3. Add new rows.
+    items.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-size:.78rem;color:#64748b;">${row.transaction_id ?? '—'}</td>
+        <td><strong>${escHtml(row.numero_asiento ?? '—')}</strong></td>
+        <td>${fmtDisplay(row.fecha)}</td>
+        <td>${row.periodo ?? '—'}</td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+            title="${escHtml(row.descripcion ?? '')}">${escHtml(row.descripcion ?? '—')}</td>
+        <td style="font-size:.8rem;">${fmtDisplay(row.fecha_creacion)}</td>
+        <td style="font-size:.8rem;">${fmtDisplay(row.ultima_modificacion)}</td>
+        <td>
+          <button class="btn-detail"
+            data-id="${row.transaction_id}"
+            data-asiento="${escHtml(row.numero_asiento ?? '')}"
+            data-fecha="${fmtDisplay(row.fecha)}"
+            data-periodo="${escHtml(String(row.periodo ?? ''))}"
+            data-memo="${escHtml(row.descripcion ?? '')}">
+            <i class="fa-solid fa-eye"></i> Detalle
+          </button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    // 4. Init DataTables on the populated, visible table.
+    dtMain = $('#txTable').DataTable({
+      language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+      pageLength: 25,
+      order: [],
+      columnDefs: [{ orderable: false, targets: 7 }],
+    });
+
+    document.getElementById('txCountText').textContent =
+      `${items.length} transacción${items.length !== 1 ? 'es' : ''}`;
+  }
+
+  // ── Detail modal ────────────────────────────────────────
+  document.getElementById('txTableBody').addEventListener('click', e => {
+    const btn = e.target.closest('.btn-detail');
+    if (btn) openDetail(btn.dataset);
+  });
+  document.getElementById('closeDetailModal').addEventListener('click', closeDetail);
+  document.getElementById('detailModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('detailModal')) closeDetail();
+  });
+
+  async function openDetail(ds) {
+    const modal = document.getElementById('detailModal');
+    modal.style.display = 'flex';
+
+    // Serve from cache if available — no network request needed.
+    if (detailCache.has(ds.id)) {
+      renderDetail(ds, detailCache.get(ds.id));
+      document.getElementById('detailLoading').style.display = 'none';
+      document.getElementById('detailContent').style.display = '';
+      return;
+    }
+
+    // First open: fetch from server.
+    document.getElementById('detailContent').style.display = 'none';
+    document.getElementById('detailLoading').style.display = '';
+
+    try {
+      const resp = await fetch(window.location.pathname, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ action: 'detail', transaction_id: ds.id }),
+      });
+      const data = await resp.json();
+
+      document.getElementById('detailLoading').style.display = 'none';
+
+      if (!resp.ok || data.error) {
+        alert('Error: ' + (data.error || 'No se pudo cargar el detalle.')); return;
+      }
+
+      detailCache.set(ds.id, data);   // Store in cache for subsequent opens.
+      renderDetail(ds, data);
+      document.getElementById('detailContent').style.display = '';
+
+    } catch (e) {
+      document.getElementById('detailLoading').style.display = 'none';
+      alert('Error de conexión: ' + e.message);
+    }
+  }
+
+  function renderDetail(ds, data) {
+    const items   = data.items   || [];
+    const metrics = data.metrics || {};
+
+    // ── Meta ──
+    const metaGrid = document.getElementById('detailMeta');
+    metaGrid.innerHTML =
+      metaItem('ID Transacción', ds.id) +
+      metaItem('N° Asiento',     ds.asiento) +
+      metaItem('Fecha',          ds.fecha) +
+      metaItem('Período',        ds.periodo) +
+      metaItem('Descripción',    ds.memo || '—');
+
+    // ── Metrics bar ──
+
+    // ── Per-account ──
+    const paBody = document.getElementById('perAccountBody');
+    paBody.innerHTML = '';
+    (metrics.per_account || []).forEach(acc => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${escHtml(acc.code || String(acc.id))}</strong></td>
+        <td style="color:#475569;">${escHtml(acc.name || '—')}</td>
+        <td class="num ${acc.debit  > 0 ? 'amt-debit'  : 'amt-zero'}">${fmtAmt(acc.debit)}</td>
+        <td class="num ${acc.credit > 0 ? 'amt-credit' : 'amt-zero'}">${fmtAmt(acc.credit)}</td>`;
+      paBody.appendChild(tr);
+    });
+    document.getElementById('paFootDebit').textContent  = fmtAmt(metrics.total_debit);
+    document.getElementById('paFootCredit').textContent = fmtAmt(metrics.total_credit);
+
+    // ── Lines download ──
+    currentLines = items;
+
+    if (items.length === 0) {
+      document.getElementById('detailEmpty').style.display = '';
+      document.getElementById('detailDownloadWrap').style.display = 'none';
+    } else {
+      document.getElementById('detailEmpty').style.display = 'none';
+      document.getElementById('detailDownloadWrap').style.display = '';
+      document.getElementById('linesCountLabel').textContent =
+        `${items.length} línea${items.length !== 1 ? 's' : ''}`;
+    }
+  }
+
+  // ── Excel export ────────────────────────────────────────
+  document.getElementById('btnDownloadLines').addEventListener('click', () => {
+    if (!currentLines.length) return;
+
+    const rows = currentLines.map(line => ({
+      '#':             line.numero_linea ?? '',
+      'Cuenta (cód.)': line.cuenta_codigo || String(line.id_cuenta || ''),
+      'Nombre cuenta': line.cuenta_nombre || '',
+      'Débito':        Number(line.debito  ?? 0),
+      'Crédito':       Number(line.credito ?? 0),
+      'Subsidiaria':   line.subsidiaria_nombre  || '',
+      'Departamento':  line.departamento_nombre || '',
+      'Actividad':     line.actividad_nombre    || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 5 }, { wch: 14 }, { wch: 36 }, { wch: 14 }, { wch: 14 },
+      { wch: 28 }, { wch: 36 }, { wch: 18 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Líneas');
+
+    // File name from current modal title data
+    const asiento = document.querySelector('#detailMeta .tx-meta-value')?.textContent || 'detalle';
+    XLSX.writeFile(wb, `lineas_${asiento}.xlsx`);
+  });
+
+  function closeDetail() {
+    document.getElementById('detailModal').style.display = 'none';
+    currentLines = [];
+  }
+
+  // ── Helpers ─────────────────────────────────────────────
+  function metaItem(label, value) {
+    return `<div class="tx-meta-item">
+      <div class="tx-meta-label">${label}</div>
+      <div class="tx-meta-value">${escHtml(String(value ?? '—'))}</div>
+    </div>`;
+  }
+
+  function showSection(which) {
+    document.getElementById('txPlaceholder').style.display = which === 'placeholder' ? '' : 'none';
+    document.getElementById('txLoading').style.display    = which === 'loading'      ? '' : 'none';
+    document.getElementById('txResults').style.display    = which === 'results'      ? '' : 'none';
+  }
+
+  function setSearching(on) {
+    const btn = document.getElementById('btnSearch');
+    btn.disabled = on;
+    btn.innerHTML = on
+      ? '<span class="spinner-sm"></span> Buscando...'
+      : '<i class="fa-solid fa-magnifying-glass"></i> Buscar';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('txError');
+    el.textContent = msg; el.style.display = 'block';
+  }
+  function clearError() {
+    const el = document.getElementById('txError');
+    el.style.display = 'none'; el.textContent = '';
+  }
+})();
+</script>
+{% endblock %}

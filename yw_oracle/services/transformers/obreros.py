@@ -1,19 +1,25 @@
 import pandas as pd
 
 from .base import BasePlanillaTransformer
-from ..mappings.activities import ACTIVITY_NORMALIZATIONS_OBREROS
 from ..mappings.accounts import (
     ACCOUNT_REPLACEMENTS_OBREROS,
     ACCOUNT_FALLBACKS_OBREROS,
     AFP_ACCOUNT_RULES,
 )
-from ..mappings.subsidiaries import CLASS_ABBREVIATION_MAP
-from ..mappings.swap_class import SWAP_CLASS, ACT_CLASS_PACKING
+from ..mappings.sheets_loader import (
+    get_activity_normalizations_obreros,
+    get_class_abbreviation_map,
+    get_swap_class,
+    get_act_class_packing,
+)
 
 
 class ObrerosTransformer(BasePlanillaTransformer):
-    ACTIVITY_NORMALIZATIONS = ACTIVITY_NORMALIZATIONS_OBREROS
     ACCOUNT_FALLBACKS = ACCOUNT_FALLBACKS_OBREROS
+
+    @property
+    def ACTIVITY_NORMALIZATIONS(self):
+        return get_activity_normalizations_obreros()
 
     def add_derived_columns(self, df):
         df["code_act"] = df["Actividad del Proyecto"].str[:5]
@@ -30,10 +36,10 @@ class ObrerosTransformer(BasePlanillaTransformer):
 
         # Build CLASE GENERAL for complex CECO/area matching
         df["CLASS"] = df["DEPARTAMENTO"].str.split("-").str[1]
-        df["CLASS"] = df["CLASS"].replace(CLASS_ABBREVIATION_MAP)
+        df["CLASS"] = df["CLASS"].replace(get_class_abbreviation_map())
         df.loc[df["CLASE"] == "GESTION HUMANA", "CLASE"] = df["CLASS"]
         df["CLASE GENERAL"] = df["CLASE"].fillna("-") + " - " + df["CLASS"].fillna("-")
-        df["CLASE GENERAL"] = df["CLASE GENERAL"].replace(SWAP_CLASS)
+        df["CLASE GENERAL"] = df["CLASE GENERAL"].replace(get_swap_class())
 
         return df
 
@@ -144,7 +150,7 @@ class ObrerosTransformer(BasePlanillaTransformer):
             area_df = self.master.get_area_dataframe()
             area_df = area_df[area_df["id_subsidiary"] == self.empresa_id]
             area_df = area_df[["id_area", "name_area"]]
-            df["name_area"] = df["Actividad del Proyecto"].replace(ACT_CLASS_PACKING)
+            df["name_area"] = df["Actividad del Proyecto"].replace(get_act_class_packing())
             df = df.merge(area_df, on="name_area", how="left")
             return df
 

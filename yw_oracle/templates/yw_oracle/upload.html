@@ -129,7 +129,8 @@
                             <div class="step-number">1</div>
                             <div class="step-content">
                                 <h4>Prepara tu archivo Excel</h4>
-                                <p>Asegúrate de que tu archivo tenga el formato correcto con los encabezados en la primera fila.</p>
+                                <p><strong>Encabezados requeridos:</strong> FECHA, SUBSIDIARIA, UBICACIÓN, NOTA, DEBITO, CREDITO, NUMERO y NOMBRE DE CUENTA CONTABLE, Actividad del Proyecto, Macro Partida, Partida Presupuestaria, CLASE, DEPARTAMENTO.</p>
+                                <p style="font-size: 0.85rem; margin-top: 0.5rem;"><strong>Formatos:</strong> Fechas en DD/MM/YYYY, Débito/Crédito con punto decimal (ej: 1500.50).</p>
                             </div>
                         </li>
                         <li class="step-item">
@@ -143,7 +144,7 @@
                             <div class="step-number">3</div>
                             <div class="step-content">
                                 <h4>Revisa el resultado</h4>
-                                <p>El sistema validará automáticamente los datos y te mostrará el resultado de la carga.</p>
+                                <p>El sistema validará estructura, tipos de datos, mapeos y balance. Revisa los errores (si hay) o confirma el envío a NetSuite.</p>
                             </div>
                         </li>
                     </ul>
@@ -152,10 +153,13 @@
 
                     <p style="margin-bottom: 0.75rem; font-size: 0.9rem; color: #374151; font-weight: 500;">Requisitos del archivo:</p>
                     <ul class="requirements-list">
-                        <li>Formato de archivo: .xlsx o .xls</li>
-                        <li>La primera fila debe contener los encabezados</li>
-                        <li>No dejar celdas vacías en columnas requeridas</li>
-                        <li>Tamaño máximo: 10 MB por archivo</li>
+                        <li><strong>Formato:</strong> .xlsx o .xls</li>
+                        <li><strong>Encabezados:</strong> Primera fila exacta</li>
+                        <li><strong>Obligatorios:</strong> Cuenta Contable, Ubicación siempre</li>
+                        <li><strong>Condicional:</strong> Cuentas con 1 o 4: Actividad/Partida opcionales; otras: obligatorios</li>
+                        <li><strong>ID EXTERNO:</strong> Si existe, debe tener valor en cada fila</li>
+                        <li><strong>Balance:</strong> Débito = Crédito (diferencia máxima: S/ 1.00)</li>
+                        <li><strong>Tamaño:</strong> Máximo 10 MB</li>
                     </ul>
                 </div>
             </div>

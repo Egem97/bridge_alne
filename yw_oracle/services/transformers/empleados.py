@@ -1,13 +1,19 @@
 import pandas as pd
 
 from .base import BasePlanillaTransformer
-from ..mappings.activities import ACTIVITY_NORMALIZATIONS_EMPLEADOS
 from ..mappings.accounts import ACCOUNT_FALLBACKS_EMPLEADOS
+from ..mappings.sheets_loader import (
+    get_activity_normalizations_empleados,
+    get_class_abbreviation_map,
+)
 
 
 class EmpleadosTransformer(BasePlanillaTransformer):
-    ACTIVITY_NORMALIZATIONS = ACTIVITY_NORMALIZATIONS_EMPLEADOS
     ACCOUNT_FALLBACKS = ACCOUNT_FALLBACKS_EMPLEADOS
+
+    @property
+    def ACTIVITY_NORMALIZATIONS(self):
+        return get_activity_normalizations_empleados()
 
     def transform_accounts(self, df):
         accounts = self.master.get_accounts_excel()
@@ -34,8 +40,7 @@ class EmpleadosTransformer(BasePlanillaTransformer):
 
         # Extract CLASS from DEPARTAMENTO
         df["CLASS"] = df["DEPARTAMENTO"].str.split("-").str[1]
-        from ..mappings.subsidiaries import CLASS_ABBREVIATION_MAP
-        df["CLASS"] = df["CLASS"].replace(CLASS_ABBREVIATION_MAP)
+        df["CLASS"] = df["CLASS"].replace(get_class_abbreviation_map())
         df.loc[df["CLASE"] == "GESTION HUMANA", "CLASE"] = df["CLASS"]
 
         df["id_area"] = df["CLASE"].map(area_data)

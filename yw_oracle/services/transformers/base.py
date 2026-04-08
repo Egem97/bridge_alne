@@ -4,9 +4,9 @@ from ..master_data import MasterDataLoader
 from ..mappings.subsidiaries import (
     SUBSIDIARY_NAME_MAP,
     UBICACION_REPLACEMENTS,
-    CLASS_ABBREVIATION_MAP,
     CODE_CORRECTIONS,
 )
+from ..mappings.sheets_loader import get_class_abbreviation_map
 
 
 class BasePlanillaTransformer:
@@ -19,6 +19,7 @@ class BasePlanillaTransformer:
         self.empresa_id = None
 
     def transform(self, df):
+        df = self.filter_id_externo(df)
         df = self.normalize_subsidiaries(df)
         self.empresa_id = self.subsidiary_dict[df["SUBSIDIARIA"].iloc[0]]
         df = self.normalize_text(df)
@@ -33,6 +34,11 @@ class BasePlanillaTransformer:
         df = self.format_dates(df)
         df = self.build_nota(df)
         df = self.clean_amounts(df)
+        return df
+
+    def filter_id_externo(self, df):
+        if "ID EXTERNO" in df.columns:
+            df = df[df["ID EXTERNO"].notna()].reset_index(drop=True)
         return df
 
     def normalize_subsidiaries(self, df):

@@ -56,26 +56,34 @@ class NetSuiteClient:
             print("Warning: requests_oauthlib not installed. NetSuite authentication will fail.")
 
     def execute_suiteql(self, query):
+        """Execute a SuiteQL query fetching all pages automatically via response links."""
         if not self.auth:
             raise ImportError("requests_oauthlib is required for NetSuite authentication")
 
         url = f"{self.base_url}/query/v1/suiteql"
-        
         headers = {
             "Prefer": "transient",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
-        
-        body = {
-            "q": query
-        }
+        payload = {"q": query}
 
-        response = requests.post(url, auth=self.auth, headers=headers, json=body)
-        
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(f"NetSuite Error: {response.status_code} - {response.text}")
+        all_items = []
+
+        while url:
+            response = requests.post(url, auth=self.auth, headers=headers, json=payload)
+
+            if response.status_code != 200:
+                raise Exception(f"NetSuite Error: {response.status_code} - {response.text}")
+
+            data = response.json()
+            all_items.extend(data.get("items", []))
+
+            # Follow the 'next' link if present; it already contains the offset in the URL
+            links = data.get("links", [])
+            next_link = next((l["href"] for l in links if l.get("rel") == "next"), None)
+            url = next_link   # None stops the loop
+
+        return {"items": all_items, "count": len(all_items), "hasMore": False}
 
     def send_data(self, endpoint, data, method="POST"):
         """
