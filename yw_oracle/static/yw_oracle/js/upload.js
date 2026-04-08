@@ -385,38 +385,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (data.valid) {
             modalIcon.innerHTML = '<i class="fa-solid fa-circle-check icon-success"></i>';
-            modalTitle.textContent = '!Carga Exitosa!';
+            modalTitle.textContent = '¡Carga Exitosa!';
 
-            let msg = `Se ha procesado exitosamente el archivo.`;
+            // Extract journal entry ID from ns_results
+            let journalId = null;
             if (data.ns_results && data.ns_results.length > 0) {
-                msg += `<br><small class="text-success">Integracion con NetSuite completada.</small>`;
+                const res = data.ns_results[0];
+                if (res.data) {
+                    const body = res.data.body || res.data;
+                    const firstItem = Array.isArray(body) ? body[0] : body;
+                    journalId = firstItem?.id ?? null;
+                }
+            }
 
-                msg += `<div style="text-align: left; margin-top: 10px; background: #f1f5f9; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 0.85rem; max-height: 250px; overflow-y: auto;">`;
-                msg += `<div style="font-weight: 600; margin-bottom: 5px; color: #475569;">Detalle de Respuesta:</div>`;
-                data.ns_results.forEach((res) => {
-                    if (res.data) {
-                        try {
-                            const jsonStr = typeof res.data === 'string' ? res.data : JSON.stringify(res.data, null, 2);
-                            msg += `<pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">${jsonStr}</pre>`;
-                        } catch (e) {
-                            msg += `<div>${res.data}</div>`;
-                        }
-                    } else if (res.error) {
-                        msg += `<div style="color: #ef4444;">Error: ${res.error}</div>`;
-                    }
-                });
-                msg += `</div>`;
+            let msg = `El asiento contable fue registrado exitosamente en NetSuite.`;
+            if (journalId) {
+                msg += `<div style="margin-top: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; display: inline-flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-hashtag" style="color: #16a34a; font-size: 1rem;"></i>
+                    <span style="font-size: 0.95rem; color: #15803d; font-weight: 600;">ID de asiento: <span style="font-size: 1.1rem;">${journalId}</span></span>
+                </div>`;
             }
             if (data.row_count) {
-                msg += `<br>Filas procesadas: ${data.row_count}`;
+                msg += `<p style="margin-top: 12px; font-size: 0.85rem; color: #64748b;">${data.row_count} filas procesadas</p>`;
             }
 
             modalMessage.innerHTML = msg;
             resetFile();
         } else {
             modalIcon.innerHTML = '<i class="fa-solid fa-circle-xmark icon-error"></i>';
-            modalTitle.textContent = 'Error en la Carga';
-            modalMessage.textContent = data.error || 'Ocurrio un error desconocido procesando el archivo.';
+            modalTitle.textContent = 'No se pudo completar la carga';
+
+            // Show a clean user-friendly error, not raw JSON
+            const rawError = data.error || 'Ocurrió un error desconocido.';
+            // Try to extract just the meaningful message from NetSuite error strings
+            let friendlyError = rawError;
+            try {
+                const match = rawError.match(/"detail"\s*:\s*"([^"]+)"/);
+                if (match) friendlyError = match[1];
+            } catch (_) {}
+
+            modalMessage.innerHTML = `<p style="color: #b91c1c; font-size: 0.95rem; line-height: 1.5;">${friendlyError}</p>
+                <p style="margin-top: 10px; font-size: 0.8rem; color: #94a3b8;">Si el problema persiste, contacta al administrador del sistema.</p>`;
             modalCloseBtn.classList.add('error');
         }
     }

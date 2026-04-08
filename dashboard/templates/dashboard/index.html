@@ -1,6 +1,6 @@
 {% extends 'dashboard/base.html' %}
 
-{% block title %}Power BI Dashboard{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
 <div style="max-width: 1200px; margin: 0 auto;">
@@ -8,8 +8,7 @@
     <div style="margin-bottom: 3rem;">
         <h1 style="font-size: 2rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;">Bienvenido de nuevo,
             {{user.profile.name }}</h1>
-        <p style="color: #64748b; font-size: 1.1rem;">Aquí tienes un resumen de tus actividades pendientes.</p>
-    </div>
+        
 
     <!-- Minimalist Stats/Cards Grid -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
@@ -31,7 +30,7 @@
         </a>
 
         <!-- Card 2: View Data -->
-        <a href="#" style="text-decoration: none;"> <!-- Link to 'Mostrar Asientos' when ready -->
+        <a href="{% url 'transacciones_oracle' %}" style="text-decoration: none;"> <!-- Link to 'Mostrar Asientos' when ready -->
             <div style="background: white; padding: 2rem; border-radius: 16px; border: 1px solid #e2e8f0; transition: all 0.2s ease; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);"
                 onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1)';"
                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)';">

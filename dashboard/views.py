@@ -1,10 +1,9 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import logout, alogin
+from django.contrib.auth import logout, login
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib import messages
-from asgiref.sync import sync_to_async
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Role, Category, Company, Profile
@@ -41,25 +40,19 @@ class CrudMetaMixin:
 
 
 # --- Authentication Views ---
-async def login_view(request):
+def login_view(request):
     if request.user.is_authenticated:
         return redirect('home')
 
     if request.method == 'POST':
-        # AuthenticationForm interacts with the database, so we wrap validation in sync_to_async
         form = AuthenticationForm(request, data=request.POST)
-        is_valid = await sync_to_async(form.is_valid)()
-        
-        if is_valid:
-            user = await sync_to_async(form.get_user)()
-            await alogin(request, user)
-            # Messages might be tricky in pure async if middleware isn't adapted, 
-            # but usually modifying request.session works. 
-            # Ideally we'd wrap message adding if strict async needed, but for now:
-            await sync_to_async(messages.success)(request, f"Bienvenido, {user.username}!")
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, f"Bienvenido, {user.username}!")
             return redirect('home')
         else:
-            await sync_to_async(messages.error)(request, "Usuario o contraseña incorrectos.")
+            messages.error(request, "Usuario o contraseña incorrectos.")
     else:
         form = AuthenticationForm()
 
