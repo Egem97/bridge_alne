@@ -70,7 +70,7 @@ class NetSuiteClient:
         all_items = []
 
         while url:
-            response = requests.post(url, auth=self.auth, headers=headers, json=payload)
+            response = requests.post(url, auth=self.auth, headers=headers, json=payload, timeout=300)
 
             if response.status_code != 200:
                 raise Exception(f"NetSuite Error: {response.status_code} - {response.text}")
@@ -121,8 +121,14 @@ class NetSuiteClient:
             "Accept": "application/json",
             "X-NetSuite-Idempotency-Key": str(uuid.uuid4())
         }
-        
-        response = requests.post("https://11615603.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=940&deploy=1", auth=self.auth, headers=headers, json=data)
+
+        response = requests.post(
+            "https://11615603.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=940&deploy=1",
+            auth=self.auth,
+            headers=headers,
+            json=data,
+            timeout=300,  # 5 minutes max for NetSuite to respond
+        )
         if response.status_code == 200:
             return response.json()
         else:

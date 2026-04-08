@@ -194,6 +194,7 @@ async def upload_excel_view(request, planilla_type=None):
         {
             'planilla_type': planilla_type,
             'allowed_types': allowed_types,
+            'user_role': user_role,
         }
     )
 

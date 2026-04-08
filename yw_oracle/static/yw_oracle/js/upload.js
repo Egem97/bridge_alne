@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading(true, "Por favor, estamos subiendo los datos...");
         try {
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes timeout
+
             const res = await fetch('', {
                 method: 'POST',
                 headers: {
@@ -96,15 +99,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     action: 'confirm_upload',
                     upload_id: currentUploadId
-                })
+                }),
+                signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
             if (!res.ok) throw new Error('Error enviando datos');
             const result = await res.json();
             showResult(result);
         } catch (error) {
             console.error(error);
-            showResult({ valid: false, error: error.message });
+            const errorMsg = error.name === 'AbortError'
+                ? 'La solicitud tardó demasiado tiempo. Por favor, intenta de nuevo.'
+                : error.message;
+            showResult({ valid: false, error: errorMsg });
         } finally {
             showLoading(false);
         }
@@ -147,14 +155,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes timeout
+
             const res = await fetch('', {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-CSRFToken': csrfToken
-                }
+                },
+                signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
             if (!res.ok) {
                 try {
                     const errData = await res.json();
@@ -180,7 +193,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Upload failed:', error);
-            showResult({ valid: false, error: error.message });
+            const errorMsg = error.name === 'AbortError'
+                ? 'El análisis del archivo tardó demasiado tiempo. Por favor, intenta de nuevo.'
+                : error.message;
+            showResult({ valid: false, error: errorMsg });
         } finally {
             showLoading(false);
         }
@@ -407,6 +423,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (data.row_count) {
                 msg += `<p style="margin-top: 12px; font-size: 0.85rem; color: #64748b;">${data.row_count} filas procesadas</p>`;
+            }
+
+            // Show full server response for Owner role
+            const userRole = document.querySelector('.portal-wrapper')?.getAttribute('data-user-role');
+            if (userRole === 'Owner' && data.ns_results && data.ns_results.length > 0) {
+                msg += `<details style="margin-top: 16px; padding: 12px; background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer;">
+                    <summary style="font-weight: 600; color: #475569; font-size: 0.9rem; user-select: none;">
+                        <i class="fa-solid fa-code" style="margin-right: 6px;"></i> Ver respuesta del servidor
+                    </summary>
+                    <pre style="margin-top: 10px; background: #1e293b; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; line-height: 1.4;">${JSON.stringify(data.ns_results[0].data, null, 2)}</pre>
+                </details>`;
             }
 
             modalMessage.innerHTML = msg;
