@@ -7,7 +7,7 @@ def build_line(row):
         "account": row["id_cuenta"],
         "debit": row["DEBITO"],
         "credit": row["CREDITO"],
-        "memo": row["NOTA LINEA"],
+        "memo": "SALARIOS",
         "location": row["id_location"],
     }
     if not pd.isna(row.get("id_actividad")):

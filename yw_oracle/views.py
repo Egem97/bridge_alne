@@ -396,6 +396,8 @@ async def transactions_view(request):
                     f"AND TRUNC(t.createddate) >= TO_DATE('{date_from}', 'YYYY-MM-DD') "
                     f"AND TRUNC(t.createddate) <= TO_DATE('{date_to}', 'YYYY-MM-DD') "
                     f"AND t.subsidiary = {subsidiary_id} "
+                    "AND t.memo NOT LIKE 'DET%' "
+                    "AND t.memo NOT LIKE 'Det%' "
                     "ORDER BY t.createddate DESC, t.id"
                 )
 
@@ -438,6 +440,7 @@ async def transactions_view(request):
                     "AND t.voided = 'F' "
                     "AND tl.account IS NOT NULL "
                     f"AND t.id = {transaction_id} "
+                    
                     "ORDER BY tl.linesequencenumber"
                 )
 
