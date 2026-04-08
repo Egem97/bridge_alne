@@ -1,0 +1,92 @@
+/* SIMPLE DATATABLE STYLES - NO RESPONSIVE */
+
+/* Force container to respect boundaries */
+.dataTables_wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden;
+}
+
+/* Scroll container */
+.dataTables_scroll {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.dataTables_scrollHead,
+.dataTables_scrollBody {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+}
+
+/* Table itself */
+table.dataTable {
+    width: 100% !important;
+    table-layout: auto !important;
+}
+
+/* Headers */
+table.dataTable thead th {
+    background-color: #325c72;
+    color: #ffffff;
+    padding: 8px 12px;
+    font-weight: 600;
+    border-bottom: 2px solid #264556;
+    white-space: nowrap;
+}
+
+/* Cells */
+table.dataTable tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+table.dataTable tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+table.dataTable tbody tr:hover {
+    background-color: #e2e8f0;
+}
+
+/* Pagination */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.25rem 0.75rem;
+    margin: 0 0.125rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: white;
+    color: #374151;
+    cursor: pointer;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #f3f4f6;
+    border-color: #cbd5e1;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #325c72;
+    color: white;
+    border-color: #325c72;
+}
+
+/* Filter and length */
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    margin: 0 0.5rem;
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    font-size: 0.875rem;
+    color: #374151;
+    padding: 0.5rem 0;
+}

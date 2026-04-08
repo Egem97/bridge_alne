@@ -1,0 +1,264 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APG PACKING - Iniciar Sesión</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/logo/favicon.ico' %}">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        secondary: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Corporate CSS -->
+    <link href="{% static 'css/corporate.css' %}" rel="stylesheet">
+
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+        }
+
+        .blueberry-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3Ccircle cx='15' cy='15' r='2'/%3E%3Ccircle cx='45' cy='45' r='2'/%3E%3Ccircle cx='15' cy='45' r='3'/%3E%3Ccircle cx='45' cy='15' r='3'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .corporate-shadow {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+
+        .input-focus:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15);
+        }
+
+        .btn-hover {
+            transition: all 0.3s ease;
+        }
+
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.25);
+        }
+    </style>
+</head>
+
+<body class="h-full gradient-bg blueberry-pattern">
+    <div class="min-h-full flex">
+        <!-- Left Panel - Branding -->
+        <div class="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden login-bg-image"
+            style="background-image: url('{% static " images/login/blueberry_login.jpg" %}');">
+            <div
+                class="absolute inset-0 bg-gradient-to-br from-secondary-800 via-secondary-900 to-primary-900 opacity-70">
+            </div>
+            <div class="relative z-10 flex flex-col justify-center px-12 xl:px-16">
+                <!-- Logo -->
+                <div class="flex items-center mb-8">
+                    <div
+                        class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <!-- Logo corporativo APG PACKING -->
+                        <img src="{% static 'images/logo/logo.png' %}" alt="APG" class="w-10 h-10 object-contain"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <i class="fas fa-industry text-white text-2xl" style="display:none;"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-3xl font-bold text-white">APG</h1>
+                        <p class="text-lg text-gray-300">Sistema de Carga</p>
+                    </div>
+                </div>
+
+                <!-- Main Title -->
+                <div class="max-w-lg">
+                    <h2 class="text-4xl xl:text-5xl font-bold text-white leading-tight mb-6">
+                        Carga de Costo Laboral
+                    </h2>
+                    <p class="text-xl text-gray-300 mb-8 leading-relaxed">
+                        Monitorea el procesamiento de arándanos desde la cosecha hasta el empaque final.
+                        Optimiza tu producción con datos precisos y reportes detallados.
+                    </p>
+                </div>
+
+                <!-- Features List -->
+                <div class="space-y-4">
+                    <div class="flex items-center text-white">
+                        <div class="w-2 h-2 bg-primary-400 rounded-full mr-4"></div>
+                        <span class="text-lg">Seguimiento de procesos</span>
+                    </div>
+                    <div class="flex items-center text-white">
+                        <div class="w-2 h-2 bg-primary-400 rounded-full mr-4"></div>
+                        <span class="text-lg">Control de calidad</span>
+                    </div>
+                    <div class="flex items-center text-white">
+                        <div class="w-2 h-2 bg-primary-400 rounded-full mr-4"></div>
+                        <span class="text-lg">Reportes automatizados</span>
+                    </div>
+                </div>
+
+                <!-- Decorative Elements -->
+                <div class="absolute top-20 right-20 w-32 h-32 bg-white bg-opacity-5 rounded-full"></div>
+                <div class="absolute bottom-20 left-20 w-24 h-24 bg-primary-500 bg-opacity-20 rounded-full"></div>
+                <div class="absolute top-1/2 right-10 w-16 h-16 bg-white bg-opacity-10 rounded-full"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Login Form -->
+        <div class="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 xl:px-20 bg-white">
+            <div class="mx-auto w-full max-w-md">
+                <!-- Mobile Logo -->
+                <div class="lg:hidden text-center mb-8">
+                    <div
+                        class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-4 corporate-shadow">
+                        <!-- Logo corporativo APG PACKING -->
+                        <img src="{% static 'images/logo/logo.png' %}" alt="APG PACKING"
+                            class="w-12 h-12 object-contain"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <i class="fas fa-industry text-primary-600 text-2xl" style="display:none;"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-900">APG PACKING</h1>
+                    <p class="text-gray-600">Sistema de Seguimiento</p>
+                </div>
+
+                <!-- Welcome Section -->
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">BIENVENIDO</h2>
+                    <p class="text-gray-600">Accede a tu panel de carga</p>
+                </div>
+
+                <!-- Login Form -->
+                <form method="post" class="space-y-6" x-data="{ loading: false }" @submit="loading = true">
+                    {% csrf_token %}
+
+                    <!-- Username Field -->
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                            Usuario
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>
+                            <input id="username" name="username" type="text" required
+                                class="input-focus block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder-gray-500"
+                                placeholder="username" autocomplete="username">
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Contraseña
+                        </label>
+                        <div class="relative" x-data="{ showPassword: false }">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input id="password" name="password" :type="showPassword ? 'text' : 'password'" required
+                                class="input-focus block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder-gray-500"
+                                placeholder="••••••••" autocomplete="current-password">
+                            <button type="button" @click="showPassword = !showPassword"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"
+                                    class="text-gray-400 hover:text-gray-600"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="remember-me" name="remember-me" type="checkbox"
+                                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                            <label for="remember-me" class="ml-2 block text-sm text-gray-700">
+                                Recordarme
+                            </label>
+                        </div>
+                        <div class="text-sm">
+                            <a href="#" class="font-medium text-primary-600 hover:text-primary-500 transition-colors">
+                                ¿Olvidaste tu contraseña?
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit"
+                            class="btn-hover group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            :disabled="loading">
+                            <span x-show="!loading" class="flex items-center">
+                                <i class="fas fa-sign-in-alt mr-2"></i>
+                                Iniciar Sesión
+                            </span>
+                            <span x-show="loading" class="flex items-center">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                                Iniciando sesión...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Error Messages -->
+                {% if messages %}
+                <div class="mt-6 space-y-2">
+                    {% for message in messages %}
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Footer -->
+                <div class="mt-8 text-center text-sm text-gray-500">
+                    © 2026 APG. Sistema de carga de costo laboral
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Corporate JavaScript -->
+    <script src="{% static 'js/corporate.js' %}"></script>
+</body>
+
+</html>

@@ -1,0 +1,65 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Power BI Dashboard{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+    <!-- Welcome Section -->
+    <div style="margin-bottom: 3rem;">
+        <h1 style="font-size: 2rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;">Bienvenido de nuevo,
+            {{user.profile.name }}</h1>
+        <p style="color: #64748b; font-size: 1.1rem;">Aquí tienes un resumen de tus actividades pendientes.</p>
+    </div>
+
+    <!-- Minimalist Stats/Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+
+        <!-- Card 1: Upload -->
+        <a href="{% url 'upload_asiento_oracle' %}" style="text-decoration: none;">
+            <div style="background: white; padding: 2rem; border-radius: 16px; border: 1px solid #e2e8f0; transition: all 0.2s ease; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);"
+                onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1)';"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)';">
+                <div
+                    style="width: 48px; height: 48px; background-color: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.5rem; color: #3b82f6;"></i>
+                </div>
+                <h3 style="font-size: 1.25rem; font-weight: 600; color: #0f172a; margin-bottom: 0.5rem;">Cargar Asientos
+                </h3>
+                <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5;">Importa nuevos asientos contables desde
+                    archivos Excel de forma rápida y segura.</p>
+            </div>
+        </a>
+
+        <!-- Card 2: View Data -->
+        <a href="#" style="text-decoration: none;"> <!-- Link to 'Mostrar Asientos' when ready -->
+            <div style="background: white; padding: 2rem; border-radius: 16px; border: 1px solid #e2e8f0; transition: all 0.2s ease; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);"
+                onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1)';"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)';">
+                <div
+                    style="width: 48px; height: 48px; background-color: #f0fdf4; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                    <i class="fa-solid fa-table-list" style="font-size: 1.5rem; color: #22c55e;"></i>
+                </div>
+                <h3 style="font-size: 1.25rem; font-weight: 600; color: #0f172a; margin-bottom: 0.5rem;">Consultar
+                    Registros</h3>
+                <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5;">Visualiza y filtra el historial de
+                    asientos cargados anteriormente.</p>
+            </div>
+        </a>
+
+        <!-- Card 3: Info (Only for non-Nomina or general) -->
+        <div
+            style="background: white; padding: 2rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
+            <div
+                style="width: 48px; height: 48px; background-color: #f8fafc; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                <i class="fa-regular fa-clock" style="font-size: 1.5rem; color: #64748b;"></i>
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 600; color: #0f172a; margin-bottom: 0.5rem;">Actividad Reciente
+            </h3>
+            <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1rem;">No hay actividad
+                reciente para mostrar.</p>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard | Compromiso1{% endblock %}</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <!-- <i class="fa-solid fa-chart-line" style="margin-right: 10px; color: var(--primary-color);"></i> -->
+                <span></span>
+            </div>
+
+            <ul class="nav-links">
+                <li class="nav-item">
+                    <a href="{% url 'home' %}" class="nav-link active">
+                        <div class="nav-icon"><i class="fa-solid fa-house"></i></div>
+                        <span class="nav-text">Overview</span>
+                    </a>
+                </li>
+                {% if user.profile.role.description != 'Nómina' %}
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-file-invoice"></i></div>
+                        <span class="nav-text">Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                        <span class="nav-text">Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-gear"></i></div>
+                        <span class="nav-text">Settings</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if user.is_superuser %}
+                <li class="nav-item">
+                    <a href="{% url 'role_list' %}" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-user-shield"></i></div>
+                        <span class="nav-text">Roles</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'category_list' %}" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-layer-group"></i></div>
+                        <span class="nav-text">Categories</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'company_list' %}" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-building"></i></div>
+                        <span class="nav-text">Companies</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'profile_list' %}" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-users"></i></div>
+                        <span class="nav-text">Profiles</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'upload_asiento_oracle' %}" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-file"></i></div>
+                        <span class="nav-text">Cargar Asientos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-table"></i></div>
+                        <span class="nav-text">Mostrar Asientos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'logout' %}" class="nav-link">
+                        <div class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
+                        <span class="nav-text">Logout</span>
+                    </a>
+                </li>
+
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <button class="toggle-btn" id="sidebar-toggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <div class="user-profile">
+                    <div class="user-info">
+                        <div class="user-name">{{user.profile.name}}</div>
+                        <div class="user-role">{{user.profile.role}}</div>
+                    </div>
+                    <!-- Placeholder or dynamic image -->
+                    <div class="user-avatar">
+                        {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="User Avatar" class="user-avatar-img">
+                        {% else %}
+                        {{ user.username|slice:":1"|upper }}
+                        {% endif %}
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="content-wrapper">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Simple Script for Toggle -->
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const toggleBtn = document.getElementById('sidebar-toggle');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('active');
+            } else {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            }
+        }
+
+        toggleBtn.addEventListener('click', toggleSidebar);
+
+        // Close sidebar when clicking overlay
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        });
+
+        // Close sidebar on route change (optional check if using SPAs, but good habit)
+        // Adjust layout on resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
+                // Recover potential collapsed state logic if needed
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('expanded');
+            }
+        });
+    </script>
+</body>
+
+</html>

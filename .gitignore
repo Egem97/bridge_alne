@@ -1,0 +1,115 @@
+# === ARCHIVOS DE CONFIGURACIÓN SENSIBLES ===
+# Archivo de configuración con credenciales
+config.yaml
+config.yml
+
+# === ARCHIVOS JSON ===
+# Todos los archivos JSON (pueden contener datos temporales/sensibles)
+*.json
+
+# === ARCHIVOS DE LOG ===
+# Archivos de log generados por el sistema
+*.log
+logs/
+scheduler.log
+app.log
+
+# === ENTORNO VIRTUAL PYTHON ===
+# Carpeta del entorno virtual
+env/
+venv/
+ENV/
+VENV/
+.env
+.venv/
+
+# === ARCHIVOS TEMPORALES PYTHON ===
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# === ARCHIVOS TEMPORALES DEL SISTEMA ===
+# Archivos temporales de Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.tmp
+*.temp
+
+# Archivos temporales de macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# === ARCHIVOS DE EXCEL TEMPORALES ===
+# Archivos temporales de Excel
+~$*.xlsx
+~$*.xls
+*.xlsb
+*.xlsm
+temp_*.xlsx
+test_*.xlsx
+datos_procesados_*.xlsx
+
+# === ARCHIVOS DE JUPYTER NOTEBOOK ===
+# Checkpoints de Jupyter
+.ipynb_checkpoints
+
+# === ARCHIVOS DE DESARROLLO ===
+# Archivos de PyCharm
+.idea/
+
+# Archivos de Visual Studio Code
+.vscode/
+
+# === ARCHIVOS DE BACKUP ===
+# Archivos de backup
+*.bak
+*.backup
+*.old
+
+# === ARCHIVOS DE DATOS TEMPORALES ===
+# Archivos de datos temporales
+test_data.xlsx
+output_*.xlsx
+temp_data/
+
+# === TOKENS Y CREDENCIALES ===
+# Archivos que pueden contener tokens
+token.txt
+credentials.json
+client_secret.json
+*.pem
+*.key
+
+# === ARCHIVOS DE SISTEMA ===
+# Archivos del sistema
+.git/
+.gitattributes 
+nifty-might-269005-cd303aaaa33f.json
+xlsx
+*.xlsx
+*.xls
+*.parquet
+*.docx
+*.doc
