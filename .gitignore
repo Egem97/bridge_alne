@@ -113,3 +113,4 @@ xlsx
 *.parquet
 *.docx
 *.doc
+*.md
