@@ -1,19 +1,21 @@
 import pandas as pd
 
 from .base import BasePlanillaTransformer
-from ..mappings.accounts import ACCOUNT_FALLBACKS_EMPLEADOS
 from ..mappings.sheets_loader import (
     get_activity_normalizations_empleados,
+    get_account_fallbacks_empleados,
     get_class_abbreviation_map,
 )
 
 
 class EmpleadosTransformer(BasePlanillaTransformer):
-    ACCOUNT_FALLBACKS = ACCOUNT_FALLBACKS_EMPLEADOS
-
     @property
     def ACTIVITY_NORMALIZATIONS(self):
         return get_activity_normalizations_empleados()
+
+    @property
+    def ACCOUNT_FALLBACKS(self):
+        return get_account_fallbacks_empleados()
 
     def transform_accounts(self, df):
         accounts = self.master.get_accounts_excel()

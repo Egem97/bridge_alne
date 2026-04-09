@@ -1,12 +1,15 @@
 """
 Google Sheets → mapping dicts loader with 3-minute TTL cache.
 
-Sheets layout (each sheet has two columns: key | value, with a header row):
-    ACT OBREROS        → ACTIVITY_NORMALIZATIONS_OBREROS
-    ACT EMPLEADOS      → ACTIVITY_NORMALIZATIONS_EMPLEADOS
-    CLASE SWAP         → SWAP_CLASS
-    CLASE SWAP PACKING → ACT_CLASS_PACKING
-    ABREVIACION CLASE  → CLASS_ABBREVIATION_MAP
+Sheets layout (each sheet has two columns: CLAVE ORIGINAL | CLAVE NORMALIZADA, with a header row):
+    ACT OBREROS                    → ACTIVITY_NORMALIZATIONS_OBREROS
+    ACT EMPLEADOS                  → ACTIVITY_NORMALIZATIONS_EMPLEADOS
+    CLASE SWAP                     → SWAP_CLASS
+    CLASE SWAP PACKING             → ACT_CLASS_PACKING
+    ABREVIACION CLASE              → CLASS_ABBREVIATION_MAP
+    ACCOUNT_REPLACEMENTS_OBREROS   → ACCOUNT_REPLACEMENTS_OBREROS
+    ACCOUNT_FALLBACKS_OBREROS      → ACCOUNT_FALLBACKS_OBREROS (numeric values)
+    ACCOUNT_FALLBACKS_EMPLEADOS    → ACCOUNT_FALLBACKS_EMPLEADOS (numeric values)
 
 Falls back to the static .py dicts if Sheets is unreachable.
 """
@@ -28,6 +31,11 @@ from .swap_class import (
     ACT_CLASS_PACKING as _STATIC_ACT_CLASS_PACKING,
 )
 from .subsidiaries import CLASS_ABBREVIATION_MAP as _STATIC_CLASS_ABBREV
+from .accounts import (
+    ACCOUNT_REPLACEMENTS_OBREROS as _STATIC_ACCOUNT_REPLACEMENTS_OBREROS,
+    ACCOUNT_FALLBACKS_OBREROS as _STATIC_ACCOUNT_FALLBACKS_OBREROS,
+    ACCOUNT_FALLBACKS_EMPLEADOS as _STATIC_ACCOUNT_FALLBACKS_EMPLEADOS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +62,9 @@ _SHEET_MAP = {
     "CLASE SWAP":         "SWAP_CLASS",
     "CLASE SWAP PACKING": "ACT_CLASS_PACKING",
     "ABREVIACION CLASE":  "CLASS_ABBREVIATION_MAP",
+    "ACCOUNT_REPLACEMENTS_OBREROS": "ACCOUNT_REPLACEMENTS_OBREROS",
+    "ACCOUNT_FALLBACKS_OBREROS": "ACCOUNT_FALLBACKS_OBREROS",
+    "ACCOUNT_FALLBACKS_EMPLEADOS": "ACCOUNT_FALLBACKS_EMPLEADOS",
 }
 
 # ── Internal cache state ───────────────────────────────────────────────────────
@@ -75,17 +86,52 @@ def _sheet_to_dict(worksheet) -> dict:
     }
 
 
+def _sheet_to_dict_numeric(worksheet) -> dict:
+    """Convert a two-column worksheet to dict, trying to convert values to int/float, fallback to str."""
+    rows = worksheet.get_all_values()
+    if len(rows) < 2:
+        return {}
+
+    result = {}
+    for row in rows[1:]:  # skip header
+        if len(row) >= 2 and row[0]:  # skip empty keys
+            key = str(row[0]).strip()
+            val = str(row[1]).strip()
+
+            # Try to convert value to int or float
+            try:
+                if "." in val:
+                    result[key] = float(val)
+                else:
+                    result[key] = int(val)
+            except ValueError:
+                # Keep as string if conversion fails
+                result[key] = val
+
+    return result
+
+
 def _fetch_from_sheets() -> dict:
-    """Open the spreadsheet and read all 5 sheets. Returns a dict of dicts."""
+    """Open the spreadsheet and read all sheets. Returns a dict of dicts."""
     creds = Credentials.from_service_account_file(_CREDENTIALS_FILE, scopes=_SCOPES)
     client = gspread.authorize(creds)
     spreadsheet = client.open_by_key(SPREADSHEET_ID)
 
     result = {}
+    # Sheets that need numeric value conversion
+    numeric_sheets = {
+        "ACCOUNT_FALLBACKS_OBREROS",
+        "ACCOUNT_FALLBACKS_EMPLEADOS",
+    }
+
     for sheet_name, dict_name in _SHEET_MAP.items():
         try:
             ws = spreadsheet.worksheet(sheet_name)
-            result[dict_name] = _sheet_to_dict(ws)
+            # Use numeric converter for account fallback sheets
+            if dict_name in numeric_sheets:
+                result[dict_name] = _sheet_to_dict_numeric(ws)
+            else:
+                result[dict_name] = _sheet_to_dict(ws)
         except Exception as e:
             logger.warning(f"[SheetsLoader] Could not read sheet '{sheet_name}': {e}")
             result[dict_name] = None   # signal to use static fallback
@@ -154,3 +200,27 @@ def get_class_abbreviation_map() -> dict:
     if data is None:
         return _STATIC_CLASS_ABBREV
     return {**_STATIC_CLASS_ABBREV, **data}
+
+
+def get_account_replacements_obreros() -> dict:
+    """Load ACCOUNT_REPLACEMENTS_OBREROS from Google Sheets with fallback to static."""
+    data = _get_cache().get("ACCOUNT_REPLACEMENTS_OBREROS")
+    if data is None:
+        return _STATIC_ACCOUNT_REPLACEMENTS_OBREROS
+    return {**_STATIC_ACCOUNT_REPLACEMENTS_OBREROS, **data}
+
+
+def get_account_fallbacks_obreros() -> dict:
+    """Load ACCOUNT_FALLBACKS_OBREROS from Google Sheets with fallback to static."""
+    data = _get_cache().get("ACCOUNT_FALLBACKS_OBREROS")
+    if data is None:
+        return _STATIC_ACCOUNT_FALLBACKS_OBREROS
+    return {**_STATIC_ACCOUNT_FALLBACKS_OBREROS, **data}
+
+
+def get_account_fallbacks_empleados() -> dict:
+    """Load ACCOUNT_FALLBACKS_EMPLEADOS from Google Sheets with fallback to static."""
+    data = _get_cache().get("ACCOUNT_FALLBACKS_EMPLEADOS")
+    if data is None:
+        return _STATIC_ACCOUNT_FALLBACKS_EMPLEADOS
+    return {**_STATIC_ACCOUNT_FALLBACKS_EMPLEADOS, **data}

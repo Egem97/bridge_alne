@@ -1,13 +1,11 @@
 import pandas as pd
 
 from .base import BasePlanillaTransformer
-from ..mappings.accounts import (
-    ACCOUNT_REPLACEMENTS_OBREROS,
-    ACCOUNT_FALLBACKS_OBREROS,
-    AFP_ACCOUNT_RULES,
-)
+from ..mappings.accounts import AFP_ACCOUNT_RULES
 from ..mappings.sheets_loader import (
     get_activity_normalizations_obreros,
+    get_account_replacements_obreros,
+    get_account_fallbacks_obreros,
     get_class_abbreviation_map,
     get_swap_class,
     get_act_class_packing,
@@ -15,11 +13,13 @@ from ..mappings.sheets_loader import (
 
 
 class ObrerosTransformer(BasePlanillaTransformer):
-    ACCOUNT_FALLBACKS = ACCOUNT_FALLBACKS_OBREROS
-
     @property
     def ACTIVITY_NORMALIZATIONS(self):
         return get_activity_normalizations_obreros()
+
+    @property
+    def ACCOUNT_FALLBACKS(self):
+        return get_account_fallbacks_obreros()
 
     def add_derived_columns(self, df):
         df["code_act"] = df["Actividad del Proyecto"].str[:5]
@@ -46,7 +46,7 @@ class ObrerosTransformer(BasePlanillaTransformer):
     def transform_accounts(self, df):
         # Apply account text replacements
         df["NUMERO y NOMBRE DE CUENTA CONTABLE"] = (
-            df["NUMERO y NOMBRE DE CUENTA CONTABLE"].replace(ACCOUNT_REPLACEMENTS_OBREROS)
+            df["NUMERO y NOMBRE DE CUENTA CONTABLE"].replace(get_account_replacements_obreros())
         )
 
         # AFP account rules
